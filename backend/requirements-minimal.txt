@@ -1,0 +1,14 @@
+# Minimal requirements (without Playwright for lighter deployment)
+# Use this for static-only scraping
+
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+httpx==0.26.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
+pydantic==2.5.3
+python-multipart==0.0.6
+phonenumbers==8.13.27
+tldextract==5.1.1
+fake-useragent==1.4.0
+validators==0.22.0
