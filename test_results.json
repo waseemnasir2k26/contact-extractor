@@ -1,0 +1,45 @@
+{
+  "test_date": "2026-02-07T00:00:00",
+  "target_url": "github.com",
+  "execution_status": "BLOCKED",
+  "reason": "Python not installed on system",
+  "static_analysis": {
+    "syntax_check": "PASS - Code uses valid Python 3 syntax",
+    "imports_check": "PASS - All imports are from Python standard library",
+    "class_definitions": "PASS - LinkExtractor(HTMLParser) properly defined",
+    "function_definitions": "PASS - All functions (fetch_url, extract_all, crawl, handler) properly defined",
+    "regex_patterns": "PASS - All regex patterns are valid"
+  },
+  "code_review": {
+    "issues_found": [],
+    "warnings": [
+      "SSL certificate verification is disabled (security consideration for production)",
+      "Bare except clauses used in several places (lines 42, 48, 157-158, 168)"
+    ],
+    "structure_valid": true
+  },
+  "expected_behavior": {
+    "crawl_function": {
+      "input": "github.com (string, max_pages=1)",
+      "expected_output_keys": ["success", "source_url", "pages_scraped", "time_taken", "emails", "phones", "whatsapp", "social_links"],
+      "expected_types": {
+        "success": "boolean",
+        "source_url": "string",
+        "pages_scraped": "integer",
+        "time_taken": "float",
+        "emails": "array of strings",
+        "phones": "array of objects {original, digits, formatted}",
+        "whatsapp": "array of objects {number, link}",
+        "social_links": "object with platform keys containing arrays"
+      }
+    }
+  },
+  "runtime_tests": {
+    "test1_import": "NOT_RUN",
+    "test2_fetch_url": "NOT_RUN",
+    "test3_extract_all": "NOT_RUN",
+    "test4_crawl": "NOT_RUN",
+    "test5_data_types": "NOT_RUN"
+  },
+  "recommendation": "Install Python 3.x to run actual tests. Use: winget install Python.Python.3.13 or download from python.org"
+}

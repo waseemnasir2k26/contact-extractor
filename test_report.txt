@@ -1,0 +1,179 @@
+================================================================================
+CONTACT EXTRACTOR TEST REPORT
+================================================================================
+Date: 2026-02-07
+Target URL for testing: github.com
+Python File: C:\Users\info\OneDrive\Desktop\sKYNETJOE THEME\Web apps\contact-extractor\api\extract.py
+================================================================================
+
+EXECUTION STATUS: BLOCKED - Python Not Installed
+================================================================================
+
+The runtime tests could not be executed because Python is not installed on this
+system. Although winget shows Python 3.13.7 as installed, the actual Python
+executable was not found in any standard location.
+
+To install Python, run one of the following:
+  - winget install Python.Python.3.13
+  - Download from https://www.python.org/downloads/
+
+================================================================================
+STATIC CODE ANALYSIS RESULTS
+================================================================================
+
+[PASS] SYNTAX CHECK
+-------------------------------------------------------------------------------
+The code uses valid Python 3 syntax throughout. No syntax errors detected.
+All class definitions, function definitions, and control structures are
+properly formed.
+
+[PASS] IMPORT CHECK
+-------------------------------------------------------------------------------
+All imports are from the Python standard library:
+  - http.server (BaseHTTPRequestHandler)
+  - json
+  - re
+  - urllib.request
+  - ssl
+  - socket
+  - urllib.parse (urlparse, urljoin)
+  - html.parser (HTMLParser)
+  - time
+
+No external dependencies required. The code should work with any Python 3.x
+installation without additional package installation.
+
+[PASS] CLASS DEFINITIONS
+-------------------------------------------------------------------------------
+1. LinkExtractor(HTMLParser) - Lines 17-30
+   - Properly extends HTMLParser
+   - Implements handle_starttag() for link extraction
+   - Implements handle_data() for text extraction
+   - Correctly initializes with super().__init__()
+
+2. handler(BaseHTTPRequestHandler) - Lines 184-234
+   - Properly extends BaseHTTPRequestHandler
+   - Implements do_OPTIONS() for CORS preflight
+   - Implements do_GET() for health check
+   - Implements do_POST() for main extraction logic
+
+[PASS] FUNCTION DEFINITIONS
+-------------------------------------------------------------------------------
+1. fetch_url(url, timeout=5) - Lines 32-50
+   - Handles URL normalization (adds https:// if missing)
+   - Uses custom User-Agent header
+   - Implements fallback from HTTPS to HTTP
+   - Returns tuple: (html_content, final_url)
+
+2. extract_all(html) - Lines 52-108
+   - Extracts emails using regex patterns
+   - Extracts phone numbers (US format)
+   - Extracts WhatsApp links
+   - Extracts social media profiles (8 platforms)
+   - Returns structured dictionary
+
+3. crawl(start_url, max_pages=2) - Lines 110-182
+   - Implements web crawler with page limit
+   - Has 20-second timeout protection
+   - Aggregates data from multiple pages
+   - Prioritizes contact/about pages
+   - Returns comprehensive results dictionary
+
+[PASS] REGEX PATTERNS
+-------------------------------------------------------------------------------
+All regex patterns are valid and well-formed:
+  - Email: r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+  - Mailto: r'mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+  - Phone: r'\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+  - WhatsApp: r'(?:api\.)?whatsapp\.com/send\?phone=(\d+)|wa\.me/(\d+)'
+  - Social platforms: 8 separate patterns for FB, Twitter/X, LinkedIn, etc.
+
+================================================================================
+EXPECTED DATA STRUCTURE (crawl function return value)
+================================================================================
+{
+    "success": true,                    // boolean
+    "source_url": "https://github.com", // string
+    "pages_scraped": 1,                 // integer (1-3)
+    "time_taken": 2.5,                  // float (seconds)
+    "emails": ["email@example.com"],    // array of strings (max 15)
+    "phones": [                         // array of objects (max 10)
+        {
+            "original": "(555) 123-4567",
+            "digits": "5551234567",
+            "formatted": "(555) 123-4567"
+        }
+    ],
+    "whatsapp": [                       // array of objects (max 5)
+        {
+            "number": "15551234567",
+            "link": "https://wa.me/15551234567"
+        }
+    ],
+    "social_links": {                   // object
+        "facebook": [],
+        "twitter": [],
+        "linkedin": [],
+        "instagram": [],
+        "youtube": [],
+        "tiktok": [],
+        "github": [
+            {
+                "username": "example",
+                "url": "https://github.com/example",
+                "platform": "github"
+            }
+        ],
+        "telegram": []
+    }
+}
+
+================================================================================
+WARNINGS (Non-Critical Issues)
+================================================================================
+
+1. SSL Certificate Verification Disabled (Lines 13-15)
+   - ssl_context.check_hostname = False
+   - ssl_context.verify_mode = ssl.CERT_NONE
+   - This is intentional for scraping but could be a security concern
+
+2. Bare Except Clauses
+   - Lines 42-43, 48-49: In fetch_url()
+   - Lines 157-158: In HTML parsing
+   - Line 168: In URL processing
+   - Consider catching specific exceptions for better error handling
+
+3. No Input Validation
+   - URL input is not sanitized beyond basic checks
+   - Could be enhanced with URL validation
+
+================================================================================
+CONCLUSION
+================================================================================
+
+STATIC ANALYSIS: PASS
+The code is syntactically correct and well-structured. All imports are from
+the standard library. The code should work without modification once Python
+is installed.
+
+RUNTIME TESTS: NOT EXECUTED
+Python must be installed to verify:
+  1. Module imports successfully
+  2. fetch_url() can retrieve web pages
+  3. extract_all() correctly parses HTML
+  4. crawl() returns expected data structure
+  5. All data types match expected schema
+
+RECOMMENDATION:
+Install Python 3.x and re-run test_extract.py to complete runtime verification.
+
+================================================================================
+TEST FILES CREATED
+================================================================================
+1. test_extract.py - Runtime test script
+2. test_results.json - Machine-readable test results
+3. test_report.txt - This report
+4. run_test.ps1 - PowerShell wrapper to find Python and run tests
+5. find_python.ps1 - Python finder utility
+
+================================================================================
