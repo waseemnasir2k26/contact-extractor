@@ -4,10 +4,6 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://your-backend-url.railway.app/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

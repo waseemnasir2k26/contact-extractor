@@ -1,197 +1,94 @@
 # Contact Extractor
 
-A production-ready web application that extracts contact information (emails, phone numbers, WhatsApp, social media links) from any website. **No AI APIs or paid services required** - 100% self-hosted.
+Extract emails, phone numbers, WhatsApp links & social media profiles from any website. **Free to use - No login required - No AI APIs needed**.
+
+## Live Demo
+
+- **Frontend**: [Deployed on Vercel]
+- **Backend API**: [Deployed on Render]
 
 ## Features
 
-- **Email Extraction**: Detects standard and obfuscated email formats
-- **Phone Numbers**: International format detection with validation
-- **WhatsApp**: Extracts wa.me links and WhatsApp API URLs
-- **Social Media**: Facebook, Twitter, LinkedIn, Instagram, YouTube, TikTok, GitHub, Telegram
-- **Contact Names**: Extracts names from contact pages
-- **Physical Addresses**: Detects US and international address formats
-- **Export Options**: Copy to clipboard or export as CSV
+- **Email Extraction**: Standard + obfuscated formats
+- **Phone Numbers**: International validation
+- **WhatsApp**: wa.me and API links
+- **Social Media**: Facebook, Twitter, LinkedIn, Instagram, YouTube, TikTok, GitHub, Telegram, Pinterest
+- **Export**: Copy to clipboard or download CSV
+- **No Login**: Anyone can use it for free
 
-## Tech Stack
+## Deploy Your Own (Free)
 
-- **Frontend**: React 18 + Vite + TailwindCSS
-- **Backend**: Python FastAPI + BeautifulSoup + Playwright
-- **Deployment**: Docker, Vercel, Railway, Render
+### Step 1: Deploy Backend to Render (Free)
 
-## Quick Start
+1. Go to [render.com](https://render.com) and sign up (free)
+2. Click **New > Web Service**
+3. Connect your GitHub repo: `waseemnasir2k26/contact-extractor`
+4. Configure:
+   - **Name**: `contact-extractor-api`
+   - **Root Directory**: `backend`
+   - **Runtime**: `Docker`
+   - **Instance Type**: `Free`
+5. Click **Create Web Service**
+6. Wait for deployment (~5 mins)
+7. Copy your URL: `https://contact-extractor-api.onrender.com`
 
-### Option 1: Docker (Recommended)
+### Step 2: Deploy Frontend to Vercel (Free)
+
+1. Go to [vercel.com](https://vercel.com) and sign up (free)
+2. Click **Add New > Project**
+3. Import your GitHub repo: `waseemnasir2k26/contact-extractor`
+4. Configure:
+   - **Root Directory**: `frontend`
+   - **Framework**: `Vite`
+5. Add Environment Variable:
+   - **Name**: `VITE_API_URL`
+   - **Value**: `https://contact-extractor-api.onrender.com` (your Render URL)
+6. Click **Deploy**
+7. Your app is live!
+
+## Local Development
 
 ```bash
-# Clone and run
-git clone https://github.com/yourusername/contact-extractor.git
+# Clone
+git clone https://github.com/waseemnasir2k26/contact-extractor.git
 cd contact-extractor
-docker-compose up --build
-```
 
-Open http://localhost:3000
-
-### Option 2: Local Development
-
-**Backend:**
-```bash
+# Backend (Terminal 1)
 cd backend
 python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
-playwright install chromium
-uvicorn app.main:app --reload
-```
+uvicorn app.main:app --reload --port 8000
 
-**Frontend:**
-```bash
+# Frontend (Terminal 2)
 cd frontend
 npm install
 npm run dev
 ```
 
-## API Endpoints
+Open http://localhost:3000
 
-### Extract Contacts (Sync)
-```bash
-POST /extract
-{
-  "url": "https://example.com",
-  "max_pages": 10,
-  "use_dynamic": false,
-  "timeout": 30
-}
-```
-
-### Extract Contacts (Async)
-```bash
-POST /extract/async
-# Returns job_id
-
-GET /extract/status/{job_id}
-# Returns status and results
-```
-
-### Batch Extract
-```bash
-POST /batch-extract
-["https://site1.com", "https://site2.com"]
-```
-
-### Export Format
-```bash
-POST /extract/export
-# Returns spreadsheet-friendly format
-```
-
-## Deployment
-
-### Vercel (Frontend) + Railway (Backend)
-
-1. **Backend on Railway:**
-   - Push to GitHub
-   - Connect to Railway
-   - Deploy from `/backend` folder
-   - Note your deployment URL
-
-2. **Frontend on Vercel:**
-   - Connect to Vercel
-   - Set root directory to `/frontend`
-   - Add environment variable: `VITE_API_URL=https://your-railway-url.railway.app`
-   - Deploy
-
-### Render (Full Stack)
+## API Usage
 
 ```bash
-# Uses render.yaml blueprint
-# Push to GitHub and connect to Render
+# Extract contacts
+curl -X POST https://your-api.onrender.com/extract \
+  -H "Content-Type: application/json" \
+  -d '{"url": "example.com", "max_pages": 5}'
 ```
 
-## Project Structure
+## Tech Stack
 
-```
-contact-extractor/
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py          # FastAPI application
-│   │   ├── scraper.py       # Web scraping logic
-│   │   └── extractors.py    # Regex patterns & extractors
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── railway.json
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx          # Main React component
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── Dockerfile
-│   └── vercel.json
-├── docker-compose.yml
-├── nginx.conf
-├── render.yaml
-└── README.md
-```
-
-## Configuration
-
-### Backend Settings
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| max_pages | 10 | Maximum pages to crawl |
-| timeout | 30 | Request timeout in seconds |
-| use_dynamic | false | Use Playwright for JS sites |
-
-### CORS
-
-Update `app/main.py` for production:
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://yourdomain.com"],
-    ...
-)
-```
-
-## Scraping Strategy
-
-1. **Static First**: Uses `httpx` + BeautifulSoup for fast static scraping
-2. **Dynamic Fallback**: Playwright (headless Chromium) for JavaScript-rendered sites
-3. **Smart Crawling**: Prioritizes contact, about, team pages
-4. **Rate Limiting**: Respectful crawling with delays
-
-## Regex Patterns
-
-### Emails
-- Standard: `user@domain.com`
-- Obfuscated: `user [at] domain [dot] com`
-- Mailto links
-
-### Phones
-- International: `+1 (555) 123-4567`
-- US/Canada: `(555) 123-4567`
-- European: `+44 20 7946 0958`
-
-### Social Media
-- Detects profile URLs for 9+ platforms
-- Filters out share/intent links
-- Extracts usernames
+| Component | Technology |
+|-----------|------------|
+| Frontend | React 18, Vite, TailwindCSS |
+| Backend | Python, FastAPI, BeautifulSoup |
+| Deployment | Vercel (frontend), Render (backend) |
 
 ## License
 
-MIT License - Use freely for personal and commercial projects.
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Submit pull request
+MIT - Free for personal and commercial use.
 
 ---
 
-Built with Python and React. No AI APIs required.
+**No AI APIs. No paid services. 100% free.**

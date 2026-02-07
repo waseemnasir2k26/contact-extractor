@@ -1,32 +1,15 @@
-# Render Blueprint - Deploy both frontend and backend
+# Render Blueprint - Backend API Only
+# Frontend deploys to Vercel separately
+
 services:
-  # Backend API
   - type: web
     name: contact-extractor-api
-    env: docker
+    runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     region: oregon
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
-
-  # Frontend
-  - type: web
-    name: contact-extractor-web
-    env: static
-    buildCommand: cd frontend && npm ci && npm run build
-    staticPublishPath: ./frontend/dist
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-    routes:
-      - type: rewrite
-        source: /api/*
-        destination: https://contact-extractor-api.onrender.com/*
-      - type: rewrite
-        source: /*
-        destination: /index.html
