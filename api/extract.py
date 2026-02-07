@@ -4,8 +4,13 @@ import re
 import urllib.request
 import urllib.error
 import ssl
+import socket
 from urllib.parse import urlparse, urljoin
 from html.parser import HTMLParser
+import time
+
+# Set socket timeout globally
+socket.setdefaulttimeout(8)
 
 # Disable SSL verification for problematic sites
 ssl_context = ssl.create_default_context()
@@ -27,31 +32,30 @@ class LinkExtractor(HTMLParser):
     def handle_data(self, data):
         self.text_content.append(data)
 
-def fetch_url(url, timeout=15):
-    """Fetch URL content"""
+def fetch_url(url, timeout=6):
+    """Fetch URL content with strict timeout"""
     if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
     }
 
     req = urllib.request.Request(url, headers=headers)
 
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=ssl_context) as response:
-            content = response.read().decode('utf-8', errors='ignore')
+            # Limit content size to 500KB for speed
+            content = response.read(500000).decode('utf-8', errors='ignore')
             return content, response.geturl()
     except Exception as e:
-        # Try http if https fails
         if url.startswith('https://'):
             try:
                 http_url = url.replace('https://', 'http://')
                 req = urllib.request.Request(http_url, headers=headers)
                 with urllib.request.urlopen(req, timeout=timeout) as response:
-                    content = response.read().decode('utf-8', errors='ignore')
+                    content = response.read(500000).decode('utf-8', errors='ignore')
                     return content, response.geturl()
             except:
                 pass
@@ -60,168 +64,126 @@ def fetch_url(url, timeout=15):
 def extract_emails(html, text):
     """Extract email addresses"""
     emails = set()
-
-    # Standard email pattern
     email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
 
-    # Find in HTML
     for match in re.finditer(email_pattern, html):
         email = match.group().lower().strip('.')
-        if not any(x in email for x in ['example.com', 'yourdomain', 'email.com', '.png', '.jpg', '.gif', '.css', '.js']):
+        if not any(x in email for x in ['example.com', 'yourdomain', 'email.com', '.png', '.jpg', '.gif', '.css', '.js', 'wixpress', 'sentry']):
             emails.add(email)
 
-    # Find obfuscated emails
-    obfuscated_patterns = [
-        r'([a-zA-Z0-9._%+-]+)\s*[\[\(]\s*at\s*[\]\)]\s*([a-zA-Z0-9.-]+)\s*[\[\(]\s*dot\s*[\]\)]\s*([a-zA-Z]{2,})',
-        r'([a-zA-Z0-9._%+-]+)\s*@\s*([a-zA-Z0-9.-]+)\s*\.\s*([a-zA-Z]{2,})',
-    ]
-
-    for pattern in obfuscated_patterns:
-        for match in re.finditer(pattern, text, re.IGNORECASE):
-            try:
-                email = f"{match.group(1)}@{match.group(2)}.{match.group(3)}".lower()
-                emails.add(email)
-            except:
-                pass
-
-    # Find mailto links
-    mailto_pattern = r'mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
-    for match in re.finditer(mailto_pattern, html, re.IGNORECASE):
+    # Mailto links
+    for match in re.finditer(r'mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', html, re.IGNORECASE):
         emails.add(match.group(1).lower())
 
-    return list(emails)
+    return list(emails)[:20]
 
-def extract_phones(html, text):
+def extract_phones(html):
     """Extract phone numbers"""
     phones = []
     seen = set()
 
-    # Phone patterns
     patterns = [
         r'\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}',
         r'\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}',
-        r'\(\d{3}\)\s*\d{3}[-.\s]?\d{4}',
-        r'\d{3}[-.\s]\d{3}[-.\s]\d{4}',
     ]
 
-    combined = html + ' ' + text
-
     for pattern in patterns:
-        for match in re.finditer(pattern, combined):
+        for match in re.finditer(pattern, html):
             phone = match.group()
             digits = re.sub(r'\D', '', phone)
-
-            if 7 <= len(digits) <= 15 and digits not in seen:
+            if 10 <= len(digits) <= 15 and digits not in seen:
                 seen.add(digits)
-                phones.append({
-                    'original': phone.strip(),
-                    'digits': digits,
-                    'formatted': phone.strip()
-                })
+                phones.append({'original': phone.strip(), 'digits': digits, 'formatted': phone.strip()})
+                if len(phones) >= 10:
+                    return phones
 
-    return phones[:20]  # Limit results
+    return phones
 
 def extract_whatsapp(html):
     """Extract WhatsApp links"""
     whatsapp = []
     seen = set()
 
-    patterns = [
-        r'https?://(?:api\.)?whatsapp\.com/send\?phone=(\d+)',
-        r'https?://wa\.me/(\d+)',
-        r'https?://web\.whatsapp\.com/send\?phone=(\d+)',
-    ]
+    for match in re.finditer(r'(?:api\.)?whatsapp\.com/send\?phone=(\d+)|wa\.me/(\d+)', html, re.IGNORECASE):
+        number = match.group(1) or match.group(2)
+        if number and number not in seen:
+            seen.add(number)
+            whatsapp.append({'number': number, 'link': f'https://wa.me/{number}'})
 
-    for pattern in patterns:
-        for match in re.finditer(pattern, html, re.IGNORECASE):
-            number = match.group(1)
-            if number not in seen:
-                seen.add(number)
-                whatsapp.append({
-                    'number': number,
-                    'link': f'https://wa.me/{number}'
-                })
+    return whatsapp[:5]
 
-    return whatsapp
-
-def extract_social_links(html, links):
+def extract_social_links(html):
     """Extract social media links"""
-    social = {
-        'facebook': [],
-        'twitter': [],
-        'linkedin': [],
-        'instagram': [],
-        'youtube': [],
-        'tiktok': [],
-        'github': [],
-        'telegram': [],
-        'pinterest': []
-    }
+    social = {}
 
     patterns = {
-        'facebook': r'(?:https?://)?(?:www\.)?facebook\.com/([a-zA-Z0-9._-]+)',
-        'twitter': r'(?:https?://)?(?:www\.)?(?:twitter|x)\.com/([a-zA-Z0-9_]+)',
-        'linkedin': r'(?:https?://)?(?:www\.)?linkedin\.com/(?:in|company)/([a-zA-Z0-9_-]+)',
-        'instagram': r'(?:https?://)?(?:www\.)?instagram\.com/([a-zA-Z0-9._]+)',
-        'youtube': r'(?:https?://)?(?:www\.)?youtube\.com/(?:@|channel/|user/)?([a-zA-Z0-9_-]+)',
-        'tiktok': r'(?:https?://)?(?:www\.)?tiktok\.com/@([a-zA-Z0-9._]+)',
-        'github': r'(?:https?://)?(?:www\.)?github\.com/([a-zA-Z0-9_-]+)',
-        'telegram': r'(?:https?://)?(?:www\.)?t\.me/([a-zA-Z0-9_]+)',
-        'pinterest': r'(?:https?://)?(?:www\.)?pinterest\.com/([a-zA-Z0-9_]+)',
+        'facebook': r'facebook\.com/([a-zA-Z0-9._-]+)',
+        'twitter': r'(?:twitter|x)\.com/([a-zA-Z0-9_]+)',
+        'linkedin': r'linkedin\.com/(?:in|company)/([a-zA-Z0-9_-]+)',
+        'instagram': r'instagram\.com/([a-zA-Z0-9._]+)',
+        'youtube': r'youtube\.com/(?:@|channel/|user/)?([a-zA-Z0-9_-]+)',
+        'tiktok': r'tiktok\.com/@([a-zA-Z0-9._]+)',
+        'github': r'github\.com/([a-zA-Z0-9_-]+)',
+        'telegram': r't\.me/([a-zA-Z0-9_]+)',
     }
 
-    seen = {platform: set() for platform in social}
-    combined = html + ' ' + ' '.join(links)
+    skip = ['share', 'sharer', 'intent', 'watch', 'search', 'login', 'signup', 'help', 'about', 'privacy', 'terms', 'policy', 'plugins', 'dialog']
 
     for platform, pattern in patterns.items():
-        for match in re.finditer(pattern, combined, re.IGNORECASE):
+        social[platform] = []
+        seen = set()
+        for match in re.finditer(pattern, html, re.IGNORECASE):
             username = match.group(1)
-            # Skip common non-profile paths
-            if username.lower() in ['share', 'sharer', 'intent', 'watch', 'search', 'explore', 'login', 'signup', 'help', 'about', 'privacy', 'terms']:
-                continue
-            if username not in seen[platform]:
-                seen[platform].add(username)
+            if username.lower() not in skip and username not in seen and len(username) > 1:
+                seen.add(username)
                 social[platform].append({
                     'username': username,
-                    'url': match.group(0) if match.group(0).startswith('http') else f'https://{match.group(0)}',
+                    'url': f'https://{platform}.com/{username}' if platform != 'telegram' else f'https://t.me/{username}',
                     'platform': platform
                 })
+                if len(social[platform]) >= 3:
+                    break
 
     return social
 
-def crawl_website(start_url, max_pages=5):
-    """Crawl website and extract contacts"""
+def crawl_website(start_url, max_pages=3, timeout_seconds=25):
+    """Crawl website with strict time limit"""
+    start_time = time.time()
+
     all_emails = set()
     all_phones = []
     all_whatsapp = []
-    all_social = {
-        'facebook': [], 'twitter': [], 'linkedin': [], 'instagram': [],
-        'youtube': [], 'tiktok': [], 'github': [], 'telegram': [], 'pinterest': []
-    }
+    all_social = {}
 
-    parsed_start = urlparse(start_url if start_url.startswith('http') else f'https://{start_url}')
-    base_domain = parsed_start.netloc or parsed_start.path.split('/')[0]
+    if not start_url.startswith('http'):
+        start_url = 'https://' + start_url
+
+    parsed_start = urlparse(start_url)
+    base_domain = parsed_start.netloc
 
     visited = set()
-    to_visit = [start_url if start_url.startswith('http') else f'https://{start_url}']
+    to_visit = [start_url]
     pages_crawled = 0
 
-    # Priority pages to check
-    priority_paths = ['/contact', '/about', '/contact-us', '/about-us', '/team', '/support']
+    # Priority pages
+    priority_keywords = ['contact', 'about', 'team', 'support', 'reach']
 
     while to_visit and pages_crawled < max_pages:
-        url = to_visit.pop(0)
+        # Check time limit
+        if time.time() - start_time > timeout_seconds:
+            break
 
+        url = to_visit.pop(0)
         if url in visited:
             continue
 
         visited.add(url)
 
         try:
-            html, final_url = fetch_url(url)
+            html, final_url = fetch_url(url, timeout=6)
             pages_crawled += 1
 
-            # Parse HTML
+            # Parse
             parser = LinkExtractor()
             try:
                 parser.feed(html)
@@ -230,53 +192,53 @@ def crawl_website(start_url, max_pages=5):
 
             text = ' '.join(parser.text_content)
 
-            # Extract data
+            # Extract
             emails = extract_emails(html, text)
             all_emails.update(emails)
 
-            phones = extract_phones(html, text)
-            for phone in phones:
-                if phone['digits'] not in [p['digits'] for p in all_phones]:
-                    all_phones.append(phone)
+            phones = extract_phones(html)
+            for p in phones:
+                if p['digits'] not in [x['digits'] for x in all_phones]:
+                    all_phones.append(p)
 
-            whatsapp = extract_whatsapp(html)
-            for wa in whatsapp:
-                if wa['number'] not in [w['number'] for w in all_whatsapp]:
-                    all_whatsapp.append(wa)
+            wa = extract_whatsapp(html)
+            for w in wa:
+                if w['number'] not in [x['number'] for x in all_whatsapp]:
+                    all_whatsapp.append(w)
 
-            social = extract_social_links(html, parser.links)
+            social = extract_social_links(html)
             for platform, links in social.items():
+                if platform not in all_social:
+                    all_social[platform] = []
                 for link in links:
-                    if link['username'] not in [l['username'] for l in all_social[platform]]:
+                    if link['username'] not in [x['username'] for x in all_social[platform]]:
                         all_social[platform].append(link)
 
-            # Find more pages to crawl (priority pages first)
-            if pages_crawled < max_pages:
-                for link in parser.links:
+            # Find priority pages
+            if pages_crawled < max_pages and time.time() - start_time < timeout_seconds - 5:
+                for link in parser.links[:50]:
                     try:
                         full_url = urljoin(final_url, link)
                         parsed = urlparse(full_url)
-
-                        # Only follow links on same domain
                         if base_domain in parsed.netloc and full_url not in visited:
-                            # Prioritize contact/about pages
-                            if any(p in parsed.path.lower() for p in priority_paths):
+                            if any(kw in parsed.path.lower() for kw in priority_keywords):
                                 to_visit.insert(0, full_url)
-                            elif len(to_visit) < 20:
-                                to_visit.append(full_url)
+                                break
                     except:
                         pass
 
         except Exception as e:
-            print(f"Error crawling {url}: {e}")
             continue
+
+    elapsed = round(time.time() - start_time, 1)
 
     return {
         'success': True,
         'source_url': start_url,
         'pages_scraped': pages_crawled,
+        'time_taken': elapsed,
         'emails': list(all_emails),
-        'phones': all_phones[:15],
+        'phones': all_phones[:10],
         'whatsapp': all_whatsapp,
         'social_links': all_social
     }
@@ -295,35 +257,59 @@ class handler(BaseHTTPRequestHandler):
             body = self.rfile.read(content_length).decode('utf-8')
             data = json.loads(body) if body else {}
 
-            url = data.get('url', '')
-            max_pages = min(int(data.get('max_pages', 5)), 10)
+            # Handle batch extraction
+            urls = data.get('urls', [])
+            if not urls:
+                url = data.get('url', '')
+                if url:
+                    urls = [url]
 
-            if not url:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': 'URL is required'}).encode())
+            if not urls:
+                self.send_error_response(400, 'URL is required')
                 return
 
-            result = crawl_website(url, max_pages)
+            # Limit to 5 URLs
+            urls = urls[:5]
+            max_pages = min(int(data.get('max_pages', 3)), 5)
+
+            results = []
+            for url in urls:
+                try:
+                    result = crawl_website(url.strip(), max_pages=max_pages, timeout_seconds=20)
+                    results.append(result)
+                except Exception as e:
+                    results.append({
+                        'success': False,
+                        'source_url': url,
+                        'error': str(e),
+                        'emails': [],
+                        'phones': [],
+                        'whatsapp': [],
+                        'social_links': {}
+                    })
+
+            # Return single result or array
+            response = results[0] if len(results) == 1 else {'success': True, 'results': results}
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps(result).encode())
+            self.wfile.write(json.dumps(response).encode())
 
         except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps({'error': str(e), 'success': False}).encode())
+            self.send_error_response(500, str(e))
+
+    def send_error_response(self, code, message):
+        self.send_response(code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps({'success': False, 'error': message}).encode())
 
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps({'status': 'ok', 'message': 'Contact Extractor API - Use POST to extract contacts'}).encode())
+        self.wfile.write(json.dumps({'status': 'ok', 'message': 'POST with {url} or {urls: [...]} to extract'}).encode())
