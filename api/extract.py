@@ -172,6 +172,7 @@ def crawl(start_url, max_pages=2):
 
     return {
         'success': True,
+        'api_version': 'v2-python',
         'source_url': start_url,
         'pages_scraped': pages,
         'time_taken': round(time.time() - start, 1),
