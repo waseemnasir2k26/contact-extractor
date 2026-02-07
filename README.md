@@ -22,7 +22,7 @@ Extract emails, phone numbers, WhatsApp links & social media profiles from any w
 
 1. Go to [render.com](https://render.com) and sign up (free)
 2. Click **New > Web Service**
-3. Connect your GitHub repo: `waseemnasir2k26/contact-extractor`
+3. Connect your GitHub repo
 4. Configure:
    - **Name**: `contact-extractor-api`
    - **Root Directory**: `backend`
@@ -30,21 +30,38 @@ Extract emails, phone numbers, WhatsApp links & social media profiles from any w
    - **Instance Type**: `Free`
 5. Click **Create Web Service**
 6. Wait for deployment (~5 mins)
-7. Copy your URL: `https://contact-extractor-api.onrender.com`
+7. Copy your URL (e.g., `https://contact-extractor-api.onrender.com`)
 
 ### Step 2: Deploy Frontend to Vercel (Free)
 
+**IMPORTANT: Follow these steps exactly to avoid 404 errors**
+
 1. Go to [vercel.com](https://vercel.com) and sign up (free)
 2. Click **Add New > Project**
-3. Import your GitHub repo: `waseemnasir2k26/contact-extractor`
-4. Configure:
-   - **Root Directory**: `frontend`
-   - **Framework**: `Vite`
-5. Add Environment Variable:
+3. Import your GitHub repo
+4. **CRITICAL SETTINGS:**
+   - **Root Directory**: Click "Edit" and type `frontend` (REQUIRED!)
+   - **Framework Preset**: Select `Vite`
+   - **Build Command**: `npm run build` (auto-detected)
+   - **Output Directory**: `dist` (auto-detected)
+5. Click **Environment Variables** and add:
    - **Name**: `VITE_API_URL`
-   - **Value**: `https://contact-extractor-api.onrender.com` (your Render URL)
+   - **Value**: Your Render backend URL (e.g., `https://contact-extractor-api.onrender.com`)
 6. Click **Deploy**
 7. Your app is live!
+
+### Fixing 404 Errors on Vercel
+
+If you see a 404 error after deployment:
+
+1. Go to your Vercel project dashboard
+2. Click **Settings** > **General**
+3. Scroll to **Root Directory**
+4. Change it to `frontend`
+5. Click **Save**
+6. Go to **Deployments** tab
+7. Click the three dots on the latest deployment
+8. Click **Redeploy**
 
 ## Local Development
 
