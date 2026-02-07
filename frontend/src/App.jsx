@@ -254,17 +254,20 @@ function ContactExtractor() {
       });
 
       clearInterval(timerRef.current);
-      setDebugInfo('Got response');
 
       const data = response.data;
+      console.log('API Response:', data);
 
+      // Handle the response
+      let resultArray = [];
       if (data.results && Array.isArray(data.results)) {
-        setResults(data.results);
-      } else if (data.success !== undefined) {
-        setResults([data]);
-      } else {
-        setResults([data]);
+        resultArray = data.results;
+      } else if (data) {
+        resultArray = [data];
       }
+
+      console.log('Setting results:', resultArray);
+      setResults(resultArray);
     } catch (err) {
       clearInterval(timerRef.current);
       console.error('Extraction error:', err);
