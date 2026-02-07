@@ -203,8 +203,18 @@ function ContactExtractor() {
     setUrls(newUrls);
   };
 
+  // Normalize URL - add https:// if missing
+  const normalizeUrl = (url) => {
+    url = url.trim();
+    if (!url) return '';
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    return url;
+  };
+
   const handleExtract = async () => {
-    const validUrls = urls.map(u => u.trim()).filter(u => u);
+    const validUrls = urls.map(u => normalizeUrl(u)).filter(u => u);
     if (validUrls.length === 0) {
       setError('Please enter at least one URL');
       return;
