@@ -4,7 +4,7 @@ Regex patterns and extraction logic for emails, phones, social links, and names.
 """
 
 import re
-from typing import List, Dict
+from typing import List, Dict, Set
 import phonenumbers
 from phonenumbers import PhoneNumberFormat, NumberParseException
 
