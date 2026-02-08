@@ -4,18 +4,10 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/*.py": {
-      "runtime": "@vercel/python@3.9"
+      "runtime": "@vercel/python"
     }
   },
   "rewrites": [
-    {
-      "source": "/api/extract",
-      "destination": "/api/extract"
-    },
-    {
-      "source": "/api/health",
-      "destination": "/api/health"
-    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
