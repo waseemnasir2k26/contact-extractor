@@ -9,12 +9,29 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        // Handle timeouts properly
+        timeout: 60000,
+        proxyTimeout: 60000,
       }
     }
   },
   build: {
     outDir: 'dist',
-    sourcemap: false
+    sourcemap: false,
+    // Optimize build
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['lucide-react'],
+        }
+      }
+    }
+  },
+  // Optimize dev server
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'axios', 'lucide-react']
   }
 })
