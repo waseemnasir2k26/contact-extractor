@@ -1,27 +1,5 @@
 {
   "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "functions": {
-    "api/*.py": {
-      "runtime": "@vercel/python@3.1"
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/extract",
-      "dest": "/api/extract.py"
-    },
-    {
-      "src": "/api/health",
-      "dest": "/api/health.py"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ]
+  "outputDirectory": "frontend/dist"
 }
