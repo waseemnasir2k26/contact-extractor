@@ -19,8 +19,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Optimize build
-    minify: 'terser',
+    // Optimize build - use esbuild (built-in, faster than terser)
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
