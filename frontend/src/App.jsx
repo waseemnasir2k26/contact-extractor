@@ -451,8 +451,8 @@ function ContactExtractor() {
 
       (result.phones || []).forEach(phone => {
         const value = phone?.formatted || phone?.original || '';
-        const digits = phone?.digits || '';
-        rows.push(`phone,"${value}",,tel:${digits},"${source}"`);
+        const e164 = phone?.e164 || phone?.original || '';
+        rows.push(`phone,"${value}",,tel:${e164},"${source}"`);
       });
 
       (result.whatsapp || []).forEach(wa => {

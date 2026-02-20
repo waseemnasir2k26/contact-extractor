@@ -13,3 +13,5 @@ services:
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: ALLOWED_ORIGINS
+        sync: false  # Set manually in Render dashboard to your Vercel frontend URL
