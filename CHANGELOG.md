@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.09] - 2026-09-16
+
+- Maintenance review of `contact-extractor` — a free, no-login web tool that extracts emails, phone numbers, WhatsApp links and social profiles from a given website.
+- Status: two-part app. A React 18 + Vite + Tailwind frontend in `frontend/` (deployable to Vercel) and a Python FastAPI + BeautifulSoup backend in `backend/` (Dockerfile, `render.yaml`, Railway config), plus a slimmed serverless variant in `api/extract.py` for Vercel functions. The repo also carries `docker-compose.yml`, nginx config, start scripts, a `test_extract.py` with committed results, and an `AUDIT_LOG.md`. MIT licensed.
+- Reviewed September 2026: documentation refreshed, a `[2026.09]` section added to the existing CHANGELOG and the repo tagged v2026.09.
+- Known gaps: the README's "Live Demo" section is still placeholder text (`[Deployed on Vercel]` / `[Deployed on Render]`) with no actual URLs, and the API example uses `your-api.onrender.com`; the existing CHANGELOG's newest prior entry is `[2.0.0] - 2024-02-09`, which pre-dates the repo's own commit history; there is no CI workflow, and the only test is the standalone `test_extract.py` script.
+- No version field was bumped: the repo has no root `package.json` or `composer.json`, and the frontend manifest (`frontend/package.json`, 1.0.0) is outside the set of files this maintenance release is permitted to touch.
+- No application code, Dockerfiles or deploy configuration were changed in this release — documentation only.
+
 ## [2.0.0] - 2024-02-09
 
 ### Major Fixes - Serverless API (`api/extract.py`)

@@ -2,6 +2,11 @@
 
 Extract emails, phone numbers, WhatsApp links & social media profiles from any website. **Free to use - No login required - No AI APIs needed**.
 
+## Status
+
+Last reviewed: September 2026 · release v2026.09
+
+
 ## Live Demo
 
 - **Frontend**: [Deployed on Vercel]
