@@ -1,0 +1,4 @@
+- contact-extractor is a public, MIT-licensed web tool that extracts emails, phone numbers, WhatsApp links and social profiles from a website (React/Vite frontend, FastAPI backend, Vercel serverless variant).
+- Current state: last functional commit was the MIT licence addition on 2026-07-26; no code changes since.
+- Reviewed October 2026: README links were checked. https://contact-extractor-api.onrender.com did not respond (HTTP 000, likely a sleeping or removed free-tier Render service); it was left unchanged because the correct replacement is not certain.
+- Known gaps: the Live Demo section is still placeholder text and the API example uses `your-api.onrender.com`; no CI; the only test is the standalone test_extract.py script. No manifest at repo root, so no version bump applied.
