@@ -54,6 +54,6 @@ You do outreach research and want a self-hosted extractor you control instead of
 
 ## Built by SkynetLabs
 
-Built by [SkynetLabs](https://skynetjoe.com). Questions: info@skynetjoe.com
+Built by [SkynetLabs](https://skynetjoe.com). Questions: waseem@skynetjoe.com
 
 Need this wired into your business? SkynetLabs builds voice agents, n8n back offices and sites that convert → https://skynetjoe.com
